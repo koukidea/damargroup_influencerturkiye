@@ -1,0 +1,86 @@
+# ---- Bağımlılıklar ----
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+jspm_packages/
+
+# ---- Build çıktıları ----
+dist/
+dist-ssr/
+build/
+.vite/
+*.local
+
+# ---- Ortam değişkenleri (asla commit'lenmez) ----
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# ---- Veritabanı / yerel veri ----
+server/data/*.sqlite3
+server/data/*.sqlite
+server/data/*.db
+*.sqlite3-journal
+
+# ---- Loglar ----
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ---- Deploy paketleri ----
+*.tar.gz
+*.tgz
+*.zip
+
+# ---- İşletim sistemi ----
+.DS_Store
+.DS_Store?
+._*
+.AppleDouble
+.LSOverride
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ---- Editör / IDE ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+
+# ---- Claude / Claude Code ----
+.claude/
+.claude.json
+.claude.json.backup
+.claude-*
+CLAUDE.md
+CLAUDE.local.md
+.mcp.json
+.anthropic/
+
+# ---- Codex / OpenAI Codex CLI ----
+.codex/
+.codex-*
+codex.md
+AGENTS.md
+.openai/
+
+# ---- Diğer AI araç dosyaları ----
+.cursor/
+.aider*
+.windsurf/
+.github/copilot-instructions.md
+
+# ---- Geçici ----
+tmp/
+temp/
+.cache/
+coverage/

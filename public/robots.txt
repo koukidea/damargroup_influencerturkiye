@@ -1,0 +1,21 @@
+# Arama motoru tarayıcı kuralları.
+# Sitemap adresi alan adına bağlı olduğu için, alan adınız farklıysa
+# aşağıdaki son satırı güncelleyin. Sitemap içeriği API tarafından
+# veritabanından üretilir; yeni yazı eklendiğinde otomatik güncellenir.
+
+User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /auth/
+
+# Sitemap /api altında duruyor; /api/ yasağından ÖNCE açıkça izin verilmeli.
+# Aksi halde Search Console sitemap'i "robots.txt tarafından engellendi" diye
+# reddeder ve hiç okumaz.
+Allow: /api/sitemap.xml
+Disallow: /api/
+
+# Arama sonucu sayfaları dizinlenmesin (içerik zaten liste sayfasında).
+Disallow: /kaynaklar?ara=
+
+Sitemap: https://influencerturkiye.com/api/sitemap.xml

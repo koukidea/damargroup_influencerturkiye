@@ -1,0 +1,228 @@
+import { useState } from 'react'
+import { Plus, Pencil, Trash2, X, Save } from 'lucide-react'
+import { useData } from '../../context/DataContext.jsx'
+import { serviceIconMap } from '../ServicesPage.jsx'
+
+const iconNames = Object.keys(serviceIconMap)
+
+const emptyForm = {
+  title: '',
+  description: '',
+  icon: iconNames[0],
+  itemsText: '',
+}
+
+export default function AdminServicesPage() {
+  const { services, addService, updateService, removeService } = useData()
+  const [editingId, setEditingId] = useState(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState(emptyForm)
+  const [saveError, setSaveError] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+
+  function startAdd() {
+    setEditingId(null)
+    setForm(emptyForm)
+    setShowForm(true)
+  }
+
+  function startEdit(service) {
+    setEditingId(service.id)
+    setForm({
+      title: service.title,
+      description: service.description,
+      icon: service.icon,
+      itemsText: (service.items || []).join('\n'),
+    })
+    setShowForm(true)
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaveError('')
+    const items = form.itemsText
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    const payload = {
+      title: form.title,
+      description: form.description,
+      icon: form.icon,
+      items,
+    }
+    try {
+      if (editingId) {
+        await updateService(editingId, payload)
+      } else {
+        await addService(payload)
+      }
+      setShowForm(false)
+      setForm(emptyForm)
+      setEditingId(null)
+    } catch (err) {
+      setSaveError(err.message)
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Bu hizmeti silmek istediğinize emin misiniz?')) return
+    setDeleteError('')
+    try {
+      await removeService(id)
+    } catch (err) {
+      setDeleteError(err.message)
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Hizmetler</h1>
+          <p className="text-gray-500">Hizmetlerimiz sayfasındaki kategorileri yönetin.</p>
+        </div>
+        <button
+          onClick={startAdd}
+          className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+        >
+          <Plus className="w-4 h-4" />
+          Yeni Ekle
+        </button>
+      </div>
+
+      {deleteError && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+          {deleteError}
+        </div>
+      )}
+
+      {showForm && (
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white border border-gray-200 rounded-3xl p-6 mb-8 space-y-4"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">
+              {editingId ? 'Hizmet Düzenle' : 'Yeni Hizmet'}
+            </h2>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {saveError && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+              {saveError}
+            </div>
+          )}
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <AdminField label="Başlık">
+              <input
+                required
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="input"
+                placeholder="ör. Sosyal Medya Yönetimi"
+              />
+            </AdminField>
+            <AdminField label="İkon">
+              <select
+                value={form.icon}
+                onChange={(e) => setForm({ ...form, icon: e.target.value })}
+                className="input"
+              >
+                {iconNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </AdminField>
+          </div>
+
+          <AdminField label="Açıklama">
+            <textarea
+              rows={2}
+              required
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              className="input resize-none"
+              placeholder="Kısa açıklama"
+            />
+          </AdminField>
+
+          <AdminField label="Alt Hizmetler (her satıra bir tane)">
+            <textarea
+              rows={5}
+              value={form.itemsText}
+              onChange={(e) => setForm({ ...form, itemsText: e.target.value })}
+              className="input resize-none font-mono text-sm"
+              placeholder={'Instagram yönetimi\nTikTok yönetimi\n...'}
+            />
+          </AdminField>
+
+          <button
+            type="submit"
+            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+          >
+            <Save className="w-4 h-4" />
+            Kaydet
+          </button>
+        </form>
+      )}
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        {services.map((service) => {
+          const Icon = serviceIconMap[service.icon]
+          return (
+            <div
+              key={service.id}
+              className="bg-white border border-gray-200 rounded-2xl p-5"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                  {Icon && <Icon className="w-5 h-5 text-red-600" />}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => startEdit(service)}
+                    className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(service.id)}
+                    className="p-1.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-1">{service.title}</h3>
+              <p className="text-sm text-gray-500 mb-3 line-clamp-2">
+                {service.description}
+              </p>
+              <p className="text-xs text-gray-400">
+                {(service.items || []).length} alt hizmet
+              </p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function AdminField({ label, children }) {
+  return (
+    <label className="block">
+      <span className="block text-sm font-medium text-gray-700 mb-1.5">{label}</span>
+      {children}
+    </label>
+  )
+}
