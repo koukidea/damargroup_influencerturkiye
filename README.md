@@ -480,20 +480,19 @@ sonucu paylaşımı çoğu ajans sözleşmesinde izne tabidir.
 
 ## 7. Bilinen Sınırlamalar
 
-- **Görsel dönüştürme (`sharp`) sunucuda yüklenemeyebilir.** API açılışında
-  `UYARI: sharp yüklenemedi` görürseniz site yine çalışır; panelden yüklenen
-  görseller yalnızca WebP'ye çevrilmeden ve küçültülmeden, geldiği biçimde
-  kaydedilir (HEIC bu durumda kabul edilmez). Sebep genelde sunucunun `glibc`
-  sürümünün hazır derlenmiş ikili için eski olmasıdır. Teşhis:
+- **Görsel dönüştürme (`sharp`) 0.33.5'e sabitlenmiştir; yükseltmeyin.**
+  sharp 0.34 ve sonrasının hazır Linux x64 ikilileri x86-64-v2 işlemci seti
+  (SSE4.2/POPCNT) ister; canlı sunucunun sanal işlemcisi bunu sunmadığı için
+  sharp yüklenemiyor ve API açılışında `UYARI: sharp yüklenemedi` çıkıyordu
+  (sharp'ın hata raporlayıcısı da bu durumda `endsWith` TypeError'ı ile
+  çöküyor). 0.33.x eski işlemcilerle çalışır. Uyarı görünürse site yine
+  çalışır; yalnızca panelden yüklenen görseller WebP'ye çevrilmeden ve
+  küçültülmeden kaydedilir (HEIC o durumda kabul edilmez). Teşhis:
 
   ```bash
-  ldd --version | head -1
-  cd server && node -e "try{require('@img/sharp-linux-x64/lib/sharp-linux-x64.node')}catch(e){console.log(e.message)}"
+  cd server && node -e "const s=require('@img/sharp-linux-x64/sharp.node');console.log('x86-64-v2:',s._isUsingX64V2())"
+  grep -o -w 'sse4_2\|popcnt' /proc/cpuinfo | sort -u
   ```
-
-  glibc 2.26'dan eskiyse `sharp` daha eski bir sürüme sabitlenmeli
-  (`npm install sharp@0.32.6` — glibc 2.17 ile çalışır). İkili dosya hiç
-  yoksa `npm install --include=optional sharp` ile yeniden kurun.
 - **Yüklenen görseller `server/uploads/` klasöründe tutulur.** Panelden
   yüklenen influencer fotoğrafları ve kapak görselleri build'e (`dist/`) değil
   API'nin yanına yazılır ve `/api/uploads/...` adresinden servis edilir. Yeni

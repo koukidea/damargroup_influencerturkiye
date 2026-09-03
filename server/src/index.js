@@ -130,7 +130,7 @@ app.listen(port, host, () => {
     console.warn(
       'UYARI: sharp yüklenemedi; görseller dönüştürülmeden/küçültülmeden kaydedilecek.\n' +
         `  Sebep: ${sharpError}\n` +
-        '  Çözüm için README.md → "Bilinen Sınırlamalar" bölümüne bakın (glibc sürümü / sharp sürümü).'
+        '  Çözüm için README.md → "Bilinen Sınırlamalar" bölümüne bakın (sharp sürümü / işlemci desteği).'
     )
   }
   reportDatabase()
