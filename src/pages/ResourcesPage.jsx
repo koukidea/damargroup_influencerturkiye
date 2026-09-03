@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, X, AlertTriangle } from 'lucide-react'
+import { Search, X, AlertTriangle, ArrowUpDown } from 'lucide-react'
 import { useData } from '../context/DataContext.jsx'
 import { useSeo } from '../lib/seo.js'
 import { resolveCategory, RESOURCES_INDEX_PATH } from '../lib/resources.js'
@@ -9,6 +9,16 @@ import Pagination from '../components/resources/Pagination.jsx'
 
 const PAGE_SIZE = 12
 
+// Adres çubuğundaki Türkçe değer → API'nin sıralama anahtarı. Varsayılan (en
+// yeni) adreste hiç görünmez; böylece paylaşılan bağlantılar kısa kalır.
+const SORT_OPTIONS = [
+  { key: 'yeni', api: 'newest', label: 'En yeni' },
+  { key: 'eski', api: 'oldest', label: 'En eski' },
+  { key: 'populer', api: 'views', label: 'En çok okunan' },
+  { key: 'baslik', api: 'title', label: 'Başlığa göre (A→Z)' },
+]
+const DEFAULT_SORT = SORT_OPTIONS[0].key
+
 export default function ResourcesPage() {
   const { resourceCategories, listResources } = useData()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -16,6 +26,8 @@ export default function ResourcesPage() {
   const activeCategory = searchParams.get('kategori') || 'all'
   const page = Math.max(Number(searchParams.get('sayfa')) || 1, 1)
   const query = searchParams.get('ara') || ''
+  const sortParam = searchParams.get('sirala') || DEFAULT_SORT
+  const sort = SORT_OPTIONS.find((o) => o.key === sortParam) || SORT_OPTIONS[0]
 
   const [data, setData] = useState({ items: [], total: 0, pageCount: 1 })
   const [loading, setLoading] = useState(true)
@@ -34,6 +46,7 @@ export default function ResourcesPage() {
     listResources({
       category: activeCategory === 'all' ? '' : activeCategory,
       q: query,
+      sort: sort.api === 'newest' ? '' : sort.api,
       page,
       limit: PAGE_SIZE,
     })
@@ -52,15 +65,18 @@ export default function ResourcesPage() {
     return () => {
       cancelled = true
     }
-  }, [activeCategory, query, page, listResources])
+  }, [activeCategory, query, sort.api, page, listResources])
 
   const listTop = useRef(null)
   const updateParams = useCallback(
     (changes, { scroll = false } = {}) => {
       const next = new URLSearchParams(searchParams)
       for (const [key, value] of Object.entries(changes)) {
-        if (!value || value === 'all') next.delete(key)
-        else next.set(key, String(value))
+        if (!value || value === 'all' || (key === 'sirala' && value === DEFAULT_SORT)) {
+          next.delete(key)
+        } else {
+          next.set(key, String(value))
+        }
       }
       setSearchParams(next, { replace: true })
       if (scroll) listTop.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -84,7 +100,13 @@ export default function ResourcesPage() {
     description: category
       ? `${category.label} kategorisindeki influencer marketing ve dijital pazarlama rehberleri, analizler ve vaka çalışmaları.`
       : 'Influencer marketing, sosyal medya yönetimi ve dijital reklam üzerine pratik rehberler, sektör analizleri ve vaka çalışmaları.',
-    canonical: `${RESOURCES_INDEX_PATH}${searchParams.toString() ? `?${searchParams}` : ''}`,
+    // Sıralama aynı içeriğin farklı dizilişi; canonical'da tutulmaz ki arama
+    // motorları her sıralamayı ayrı sayfa sanmasın.
+    canonical: (() => {
+      const canon = new URLSearchParams(searchParams)
+      canon.delete('sirala')
+      return `${RESOURCES_INDEX_PATH}${canon.toString() ? `?${canon}` : ''}`
+    })(),
     // Arama sonucu sayfaları arama motorlarında ayrı birer sayfa olarak
     // dizinlenmemeli — içerik zaten liste sayfasında var.
     robots: query ? 'noindex, follow' : undefined,
@@ -168,6 +190,22 @@ export default function ResourcesPage() {
               {cat.label}
             </button>
           ))}
+
+          <label className="ml-auto inline-flex items-center gap-2 text-sm text-gray-600">
+            <ArrowUpDown className="w-4 h-4 text-gray-400" aria-hidden="true" />
+            <span className="sr-only">Sıralama</span>
+            <select
+              value={sort.key}
+              onChange={(e) => updateParams({ sirala: e.target.value, sayfa: '' })}
+              className="bg-white border border-gray-200 hover:border-red-200 rounded-full px-4 py-2 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-all"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.key} value={opt.key}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </section>
 
