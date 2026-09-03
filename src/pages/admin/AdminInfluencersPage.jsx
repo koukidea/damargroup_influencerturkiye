@@ -1,5 +1,16 @@
 import { useMemo, useState } from 'react'
-import { Plus, Pencil, Trash2, X, Save, ArrowUp, ArrowDown, Home, Images } from 'lucide-react'
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  X,
+  Save,
+  ArrowUp,
+  ArrowDown,
+  Home,
+  Images,
+  Search,
+} from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
 import ImageUploadField from '../../components/admin/ImageUploadField.jsx'
 
@@ -23,9 +34,20 @@ const FILTERS = [
   { key: 'portfolio', label: 'Portföy', icon: Images },
 ]
 
+// Türkçe'ye duyarlı küçük harf: "İlayda" araması "ilayda" ile eşleşsin,
+// "ISIL" da "ısıl" olsun. toLowerCase tek başına İ→i̇ (noktalı) üretir.
+function fold(value) {
+  return String(value ?? '')
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .toLowerCase()
+}
+
 // Form içinde önizleme amaçlı; asıl sadeleştirme sunucuda yapılıyor.
 function previewHandle(value) {
-  const raw = String(value ?? '').trim().replace(/^@+/, '')
+  const raw = String(value ?? '')
+    .trim()
+    .replace(/^@+/, '')
   if (!raw) return ''
   return raw
     .replace(/^https?:\/\//i, '')
@@ -39,6 +61,7 @@ export default function AdminInfluencersPage() {
   const { influencers, addInfluencer, updateInfluencer, removeInfluencer, reorderInfluencers } =
     useData()
   const [filter, setFilter] = useState('all')
+  const [query, setQuery] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
@@ -56,10 +79,21 @@ export default function AdminInfluencersPage() {
   )
 
   const visible = useMemo(() => {
-    if (filter === 'home') return influencers.filter((i) => i.show_on_home)
-    if (filter === 'portfolio') return influencers.filter((i) => i.show_in_portfolio)
-    return influencers
-  }, [influencers, filter])
+    let list = influencers
+    if (filter === 'home') list = list.filter((i) => i.show_on_home)
+    if (filter === 'portfolio') list = list.filter((i) => i.show_in_portfolio)
+
+    const terms = fold(query).split(/\s+/).filter(Boolean)
+    if (!terms.length) return list
+    return list.filter((i) => {
+      const haystack = fold(`${i.name} ${i.handle} ${i.instagram}`)
+      return terms.every((term) => haystack.includes(term))
+    })
+  }, [influencers, filter, query])
+
+  // Sıralama okları yalnızca tam listede anlamlı; süzülmüş listede komşuluk
+  // gerçek sırayı yansıtmaz.
+  const canReorder = filter === 'all' && !query.trim()
 
   function startAdd() {
     setEditingId(null)
@@ -115,7 +149,11 @@ export default function AdminInfluencersPage() {
   }
 
   async function handleDelete(inf) {
-    if (!confirm(`${inf.name} kaydını silmek istediğinize emin misiniz? Bulunduğu tüm sayfalardan kaldırılır.`))
+    if (
+      !confirm(
+        `${inf.name} kaydını silmek istediğinize emin misiniz? Bulunduğu tüm sayfalardan kaldırılır.`
+      )
+    )
       return
     setListError('')
     try {
@@ -215,7 +253,8 @@ export default function AdminInfluencersPage() {
               <span className="block text-xs text-gray-500 mt-1">
                 {handle ? (
                   <>
-                    Galeride <span className="font-medium text-gray-700">@{handle}</span> olarak görünür.
+                    Galeride <span className="font-medium text-gray-700">@{handle}</span> olarak
+                    görünür.
                   </>
                 ) : (
                   'Sadece kullanıcı adı da yazabilirsiniz; link otomatik oluşturulur.'
@@ -299,7 +338,28 @@ export default function AdminInfluencersPage() {
         </form>
       )}
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <label className="relative flex-1 min-w-[220px] sm:max-w-xs">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="İsim veya kullanıcı adı ara…"
+            aria-label="Influencer ara"
+            className="w-full pl-10 pr-9 py-2 rounded-full border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-all"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+              aria-label="Aramayı temizle"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </label>
         {FILTERS.map((f) => (
           <button
             key={f.key}
@@ -325,94 +385,104 @@ export default function AdminInfluencersPage() {
           <p className="text-center text-gray-500 py-16">
             {influencers.length === 0
               ? 'Henüz influencer eklenmedi.'
-              : 'Bu sayfada gösterilen influencer yok.'}
+              : query.trim()
+                ? `“${query.trim()}” ile eşleşen influencer bulunamadı.`
+                : 'Bu sayfada gösterilen influencer yok.'}
           </p>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-500 text-left">
-              <tr>
-                <th className="px-6 py-3 font-medium">Influencer</th>
-                <th className="px-6 py-3 font-medium">Gösterim</th>
-                <th className="px-6 py-3 font-medium">Takipçi / Etkileşim</th>
-                <th className="px-6 py-3 font-medium text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {visible.map((inf) => (
-                <tr key={inf.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={inf.image}
-                        alt={inf.name}
-                        className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-gray-100"
-                        onError={(e) => (e.currentTarget.style.opacity = 0.2)}
-                      />
-                      <div className="min-w-0">
-                        <div className="font-medium text-gray-900">{inf.name}</div>
-                        <a
-                          href={inf.instagram}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-gray-500 hover:text-red-600 hover:underline"
-                        >
-                          @{inf.handle}
-                        </a>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-3">
-                    <div className="flex flex-wrap gap-1.5">
-                      {inf.show_on_home && <Badge icon={Home}>Anasayfa</Badge>}
-                      {inf.show_in_portfolio && <Badge icon={Images}>Portföy</Badge>}
-                    </div>
-                  </td>
-                  <td className="px-6 py-3 text-gray-600">
-                    {inf.show_on_home ? (
-                      <>
-                        {inf.followers} <span className="text-gray-300">·</span> {inf.engagement}
-                      </>
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-3">
-                    <div className="flex items-center justify-end gap-1">
-                      {filter === 'all' && (
-                        <>
-                          <IconButton
-                            label="Yukarı taşı"
-                            disabled={influencers[0]?.id === inf.id}
-                            onClick={() => move(inf, -1)}
-                          >
-                            <ArrowUp className="w-4 h-4" />
-                          </IconButton>
-                          <IconButton
-                            label="Aşağı taşı"
-                            disabled={influencers[influencers.length - 1]?.id === inf.id}
-                            onClick={() => move(inf, 1)}
-                          >
-                            <ArrowDown className="w-4 h-4" />
-                          </IconButton>
-                        </>
-                      )}
-                      <IconButton label="Düzenle" onClick={() => startEdit(inf)}>
-                        <Pencil className="w-4 h-4" />
-                      </IconButton>
-                      <IconButton label="Sil" danger onClick={() => handleDelete(inf)}>
-                        <Trash2 className="w-4 h-4" />
-                      </IconButton>
-                    </div>
-                  </td>
+          <>
+            {query.trim() && (
+              <div className="px-6 py-3 bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
+                {visible.length} sonuç
+              </div>
+            )}
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-500 text-left">
+                <tr>
+                  <th className="px-6 py-3 font-medium">Influencer</th>
+                  <th className="px-6 py-3 font-medium">Gösterim</th>
+                  <th className="px-6 py-3 font-medium">Takipçi / Etkileşim</th>
+                  <th className="px-6 py-3 font-medium text-right">İşlemler</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {visible.map((inf) => (
+                  <tr key={inf.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={inf.image}
+                          alt={inf.name}
+                          className="w-10 h-10 rounded-full object-cover border border-gray-200 bg-gray-100"
+                          onError={(e) => (e.currentTarget.style.opacity = 0.2)}
+                        />
+                        <div className="min-w-0">
+                          <div className="font-medium text-gray-900">{inf.name}</div>
+                          <a
+                            href={inf.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-gray-500 hover:text-red-600 hover:underline"
+                          >
+                            @{inf.handle}
+                          </a>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {inf.show_on_home && <Badge icon={Home}>Anasayfa</Badge>}
+                        {inf.show_in_portfolio && <Badge icon={Images}>Portföy</Badge>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-3 text-gray-600">
+                      {inf.show_on_home ? (
+                        <>
+                          {inf.followers} <span className="text-gray-300">·</span> {inf.engagement}
+                        </>
+                      ) : (
+                        <span className="text-gray-300">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-1">
+                        {canReorder && (
+                          <>
+                            <IconButton
+                              label="Yukarı taşı"
+                              disabled={influencers[0]?.id === inf.id}
+                              onClick={() => move(inf, -1)}
+                            >
+                              <ArrowUp className="w-4 h-4" />
+                            </IconButton>
+                            <IconButton
+                              label="Aşağı taşı"
+                              disabled={influencers[influencers.length - 1]?.id === inf.id}
+                              onClick={() => move(inf, 1)}
+                            >
+                              <ArrowDown className="w-4 h-4" />
+                            </IconButton>
+                          </>
+                        )}
+                        <IconButton label="Düzenle" onClick={() => startEdit(inf)}>
+                          <Pencil className="w-4 h-4" />
+                        </IconButton>
+                        <IconButton label="Sil" danger onClick={() => handleDelete(inf)}>
+                          <Trash2 className="w-4 h-4" />
+                        </IconButton>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
-      {filter !== 'all' && influencers.length > 0 && (
+      {!canReorder && influencers.length > 0 && (
         <p className="text-xs text-gray-400 mt-3">
-          Sıralamayı değiştirmek için “Tümü” görünümüne geçin. Sıra her iki sayfada da aynıdır.
+          Sıralamayı değiştirmek için aramayı temizleyip “Tümü” görünümüne geçin. Sıra her iki
+          sayfada da aynıdır.
         </p>
       )}
     </div>
