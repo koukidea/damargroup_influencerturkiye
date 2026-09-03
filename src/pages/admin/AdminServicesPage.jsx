@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Plus, Pencil, Trash2, Save } from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
 import Modal from '../../components/admin/Modal.jsx'
+import SearchBox from '../../components/admin/SearchBox.jsx'
+import { matchesQuery } from '../../lib/search.js'
 import { serviceIconMap } from '../ServicesPage.jsx'
 
 const iconNames = Object.keys(serviceIconMap)
@@ -20,6 +22,19 @@ export default function AdminServicesPage() {
   const [form, setForm] = useState(emptyForm)
   const [saveError, setSaveError] = useState('')
   const [deleteError, setDeleteError] = useState('')
+  const [query, setQuery] = useState('')
+
+  // Başlık, açıklama ve alt hizmetlerde arar.
+  const visible = useMemo(
+    () =>
+      services.filter((service) =>
+        matchesQuery(
+          [service.title, service.description, ...(service.items || [])].join(' '),
+          query
+        )
+      ),
+    [services, query]
+  )
 
   function startAdd() {
     setEditingId(null)
@@ -183,8 +198,29 @@ export default function AdminServicesPage() {
         </form>
       </Modal>
 
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <SearchBox
+          value={query}
+          onChange={setQuery}
+          placeholder="Hizmet adı, açıklama veya alt hizmette ara…"
+          label="Hizmetlerde ara"
+          className="flex-1 min-w-56 sm:max-w-md"
+        />
+        <span className="text-sm text-gray-500">
+          {query.trim() ? `${visible.length} sonuç` : `${services.length} hizmet`}
+        </span>
+      </div>
+
+      {visible.length === 0 && (
+        <div className="bg-white border border-gray-200 rounded-3xl p-16 text-center text-gray-500">
+          {services.length === 0
+            ? 'Henüz hizmet eklenmedi.'
+            : `“${query.trim()}” ile eşleşen hizmet bulunamadı.`}
+        </div>
+      )}
+
       <div className="grid sm:grid-cols-2 gap-4">
-        {services.map((service) => {
+        {visible.map((service) => {
           const Icon = serviceIconMap[service.icon]
           return (
             <div key={service.id} className="bg-white border border-gray-200 rounded-2xl p-5">

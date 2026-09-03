@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Save, ArrowLeft } from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
 import Modal from '../../components/admin/Modal.jsx'
+import SearchBox from '../../components/admin/SearchBox.jsx'
+import { matchesQuery } from '../../lib/search.js'
 import { CATEGORY_ICONS, CATEGORY_ICON_NAMES, resolveCategory } from '../../lib/resources.js'
 
 // Hazır renk çiftleri: yazı rengi + aynı rengin şeffaf arka planı. Elle
@@ -43,6 +45,16 @@ export default function AdminResourceCategoriesPage() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [deleteError, setDeleteError] = useState('')
+  const [query, setQuery] = useState('')
+
+  // Ad, açıklama ve adreste (slug) arar.
+  const visible = useMemo(
+    () =>
+      resourceCategories.filter((category) =>
+        matchesQuery([category.label, category.description, category.slug].join(' '), query)
+      ),
+    [resourceCategories, query]
+  )
 
   function startAdd() {
     setEditingId(null)
@@ -264,9 +276,26 @@ export default function AdminResourceCategoriesPage() {
         </form>
       </Modal>
 
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <SearchBox
+          value={query}
+          onChange={setQuery}
+          placeholder="Kategori adı, açıklama veya adreste ara…"
+          label="Kategorilerde ara"
+          className="flex-1 min-w-56 sm:max-w-md"
+        />
+        <span className="text-sm text-gray-500">
+          {query.trim() ? `${visible.length} sonuç` : `${resourceCategories.length} kategori`}
+        </span>
+      </div>
+
       <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden">
-        {resourceCategories.length === 0 ? (
-          <p className="text-center text-gray-500 py-16">Henüz kategori eklenmedi.</p>
+        {visible.length === 0 ? (
+          <p className="text-center text-gray-500 py-16">
+            {resourceCategories.length === 0
+              ? 'Henüz kategori eklenmedi.'
+              : `“${query.trim()}” ile eşleşen kategori bulunamadı.`}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px]">
@@ -278,7 +307,7 @@ export default function AdminResourceCategoriesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {resourceCategories.map((category) => {
+                {visible.map((category) => {
                   const resolved = resolveCategory(resourceCategories, category.slug)
                   const { Icon } = resolved
                   return (
