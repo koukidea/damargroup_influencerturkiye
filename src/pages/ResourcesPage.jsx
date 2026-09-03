@@ -8,6 +8,7 @@ import ResourceCard, { ResourceCardSkeleton } from '../components/resources/Reso
 import Pagination from '../components/resources/Pagination.jsx'
 
 const PAGE_SIZE = 12
+const SEARCH_DEBOUNCE_MS = 350
 
 // Adres çubuğundaki Türkçe değer → API'nin sıralama anahtarı. Varsayılan (en
 // yeni) adreste hiç görünmez; böylece paylaşılan bağlantılar kısa kalır.
@@ -34,9 +35,11 @@ export default function ResourcesPage() {
   const [error, setError] = useState('')
   const [searchInput, setSearchInput] = useState(query)
 
-  // Adres çubuğu dışarıdan değişirse (geri tuşu) arama kutusu da izlesin.
+  // Adres çubuğu dışarıdan değişirse (geri tuşu, paylaşılan bağlantı) arama
+  // kutusu da izlesin. Kutudaki metin zaten aynıysa dokunulmuyor; aksi hâlde
+  // yazma sırasında adres güncellenince sondaki boşluk silinir, imleç oynardı.
   useEffect(() => {
-    setSearchInput(query)
+    setSearchInput((current) => (current.trim() === query ? current : query))
   }, [query])
 
   useEffect(() => {
@@ -119,9 +122,29 @@ export default function ResourcesPage() {
     },
   })
 
+  // Yazarken arama: her tuşta değil, yazma durduktan kısa süre sonra adres
+  // güncellenir (replace ile; geri tuşu her harf için ayrı adım görmesin).
+  const searchTimer = useRef(null)
+  useEffect(() => () => clearTimeout(searchTimer.current), [])
+
+  function handleSearchChange(value) {
+    setSearchInput(value)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      if (value.trim() !== query) updateParams({ ara: value.trim(), sayfa: '' })
+    }, SEARCH_DEBOUNCE_MS)
+  }
+
   function handleSearchSubmit(event) {
     event.preventDefault()
+    clearTimeout(searchTimer.current)
     updateParams({ ara: searchInput.trim(), sayfa: '' })
+  }
+
+  function clearSearch() {
+    clearTimeout(searchTimer.current)
+    setSearchInput('')
+    updateParams({ ara: '', sayfa: '' })
   }
 
   return (
@@ -146,11 +169,21 @@ export default function ResourcesPage() {
             <input
               type="search"
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Yazılarda ara…"
               aria-label="Yazılarda ara"
-              className="input pl-11 pr-24"
+              className="input pl-11 pr-32"
             />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-[4.75rem] top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                aria-label="Aramayı temizle"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               type="submit"
               className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-all"
@@ -217,7 +250,7 @@ export default function ResourcesPage() {
                 <strong className="text-gray-900">“{query}”</strong> için {data.total} sonuç
               </span>
               <button
-                onClick={() => updateParams({ ara: '', sayfa: '' })}
+                onClick={clearSearch}
                 className="inline-flex items-center gap-1 text-red-600 font-medium hover:underline"
               >
                 <X className="w-3.5 h-3.5" />

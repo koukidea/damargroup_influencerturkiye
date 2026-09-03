@@ -318,8 +318,15 @@ export default function AdminInfluencersPage() {
                   value={form.engagement}
                   onChange={(e) => setForm({ ...form, engagement: e.target.value })}
                   className="input"
-                  placeholder="ör. %4"
+                  placeholder="ör. %3,8"
                 />
+                {/* Oran serbest metin; herkesin aynı yöntemle girmesi için formülü burada tutuyoruz. */}
+                <span className="block text-xs text-gray-500 mt-1">
+                  Son 10 gönderinin ortalama (beğeni + yorum) toplamı ÷ takipçi sayısı × 100.
+                  Viral olmuş uç gönderileri hesaba katmayın. Instagram Insights'taki erişim bazlı
+                  oranı değil, takipçi bazlı oranı kullanın; listedeki tüm kartlar aynı yöntemle
+                  girilmeli. <span className="font-medium text-gray-700">%3,8</span> biçiminde yazın.
+                </span>
               </AdminField>
             </div>
           )}
