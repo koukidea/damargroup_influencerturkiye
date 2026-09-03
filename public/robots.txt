@@ -13,6 +13,8 @@ Disallow: /auth/
 # Aksi halde Search Console sitemap'i "robots.txt tarafından engellendi" diye
 # reddeder ve hiç okumaz.
 Allow: /api/sitemap.xml
+# Panelden yüklenen görseller de /api altında; Google Görseller için açık.
+Allow: /api/uploads/
 Disallow: /api/
 
 # Arama sonucu sayfaları dizinlenmesin (içerik zaten liste sayfasında).
