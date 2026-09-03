@@ -6,7 +6,20 @@ import { X } from 'lucide-react'
 // ekranın ortasında açılır; böylece listede aşağıdayken "Düzenle"ye basınca
 // yukarı kaydırmak gerekmez. Esc ve karartılmış arka plana tıklama kapatır,
 // açıkken sayfa kaymaz, odak ilk alana gider.
-export default function Modal({ open, title, onClose, children, footer }) {
+const SIZES = {
+  md: 'max-w-3xl',
+  lg: 'max-w-5xl',
+}
+
+export default function Modal({
+  open,
+  title,
+  onClose,
+  children,
+  footer,
+  headerActions,
+  size = 'md',
+}) {
   const panelRef = useRef(null)
   // onClose çoğu sayfada her render'da yeniden oluşturulan sıradan bir fonksiyon.
   // Effect'i ona bağlasaydık her tuş vuruşunda yeniden çalışır ve odağı ilk
@@ -54,18 +67,21 @@ export default function Modal({ open, title, onClose, children, footer }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-3xl max-h-full flex flex-col bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden"
+        className={`relative w-full ${SIZES[size] || SIZES.md} max-h-full flex flex-col bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden`}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="font-semibold text-gray-900">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100"
-            aria-label="Kapat"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {headerActions}
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+              aria-label="Kapat"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="px-6 py-5 overflow-y-auto">{children}</div>

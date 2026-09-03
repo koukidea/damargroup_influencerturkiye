@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, X, Save } from 'lucide-react'
+import { Plus, Pencil, Trash2, Save } from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
+import Modal from '../../components/admin/Modal.jsx'
 import { serviceIconMap } from '../ServicesPage.jsx'
 
 const iconNames = Object.keys(serviceIconMap)
@@ -23,7 +24,15 @@ export default function AdminServicesPage() {
   function startAdd() {
     setEditingId(null)
     setForm(emptyForm)
+    setSaveError('')
     setShowForm(true)
+  }
+
+  function closeForm() {
+    setShowForm(false)
+    setForm(emptyForm)
+    setEditingId(null)
+    setSaveError('')
   }
 
   function startEdit(service) {
@@ -56,9 +65,7 @@ export default function AdminServicesPage() {
       } else {
         await addService(payload)
       }
-      setShowForm(false)
-      setForm(emptyForm)
-      setEditingId(null)
+      closeForm()
     } catch (err) {
       setSaveError(err.message)
     }
@@ -96,24 +103,32 @@ export default function AdminServicesPage() {
         </div>
       )}
 
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white border border-gray-200 rounded-3xl p-6 mb-8 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">
-              {editingId ? 'Hizmet Düzenle' : 'Yeni Hizmet'}
-            </h2>
+      <Modal
+        open={showForm}
+        title={editingId ? 'Hizmet Düzenle' : 'Yeni Hizmet'}
+        onClose={closeForm}
+        footer={
+          <div className="flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => setShowForm(false)}
-              className="text-gray-400 hover:text-gray-600"
+              onClick={closeForm}
+              className="text-sm text-gray-500 hover:text-gray-800 px-2"
             >
-              <X className="w-5 h-5" />
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              form="service-form"
+
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            >
+              <Save className="w-4 h-4" />
+              Kaydet
             </button>
           </div>
-
+        }
+      >
+        <form id="service-form" onSubmit={handleSubmit} className="space-y-4">
           {saveError && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               {saveError}
@@ -165,25 +180,14 @@ export default function AdminServicesPage() {
               placeholder={'Instagram yönetimi\nTikTok yönetimi\n...'}
             />
           </AdminField>
-
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-          >
-            <Save className="w-4 h-4" />
-            Kaydet
-          </button>
         </form>
-      )}
+      </Modal>
 
       <div className="grid sm:grid-cols-2 gap-4">
         {services.map((service) => {
           const Icon = serviceIconMap[service.icon]
           return (
-            <div
-              key={service.id}
-              className="bg-white border border-gray-200 rounded-2xl p-5"
-            >
+            <div key={service.id} className="bg-white border border-gray-200 rounded-2xl p-5">
               <div className="flex items-start justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
                   {Icon && <Icon className="w-5 h-5 text-red-600" />}
@@ -204,12 +208,8 @@ export default function AdminServicesPage() {
                 </div>
               </div>
               <h3 className="font-semibold text-gray-900 mb-1">{service.title}</h3>
-              <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                {service.description}
-              </p>
-              <p className="text-xs text-gray-400">
-                {(service.items || []).length} alt hizmet
-              </p>
+              <p className="text-sm text-gray-500 mb-3 line-clamp-2">{service.description}</p>
+              <p className="text-xs text-gray-400">{(service.items || []).length} alt hizmet</p>
             </div>
           )
         })}

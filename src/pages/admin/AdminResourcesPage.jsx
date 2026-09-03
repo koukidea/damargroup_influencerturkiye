@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Plus, Pencil, Trash2, X, Save, Search, Eye, ExternalLink, Wand2, ChevronDown,
+  Plus, Pencil, Trash2, Save, Search, Eye, ExternalLink, Wand2, ChevronDown,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
 import { estimateReadTime, toPlainText, truncate } from '../../lib/contentFormat.js'
 import { resolveCategory, resourcePath } from '../../lib/resources.js'
 import ArticleContent from '../../components/resources/ArticleContent.jsx'
 import ImageUploadField from '../../components/admin/ImageUploadField.jsx'
+import Modal from '../../components/admin/Modal.jsx'
 
 const PAGE_SIZE = 15
 
@@ -204,35 +205,43 @@ export default function AdminResourcesPage() {
 
       {deleteError && <Alert>{deleteError}</Alert>}
 
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white border border-gray-200 rounded-3xl p-6 mb-8 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">
-              {editingId ? 'Yazıyı Düzenle' : 'Yeni Yazı'}
-            </h2>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowPreview((v) => !v)}
-                className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all"
-              >
-                <Eye className="w-4 h-4" />
-                {showPreview ? 'Düzenlemeye dön' : 'Önizle'}
-              </button>
-              <button
-                type="button"
-                onClick={closeForm}
-                className="text-gray-400 hover:text-gray-600"
-                aria-label="Formu kapat"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Modal
+        open={showForm}
+        size="lg"
+        title={editingId ? 'Yazıyı Düzenle' : 'Yeni Yazı'}
+        onClose={closeForm}
+        headerActions={
+          <button
+            type="button"
+            onClick={() => setShowPreview((v) => !v)}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all"
+          >
+            <Eye className="w-4 h-4" />
+            {showPreview ? 'Düzenlemeye dön' : 'Önizle'}
+          </button>
+        }
+        footer={
+          <div className="flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={closeForm}
+              className="text-sm text-gray-500 hover:text-gray-800 px-2"
+            >
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              form="resource-form"
+              disabled={saving}
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? 'Kaydediliyor…' : 'Kaydet'}
+            </button>
           </div>
-
+        }
+      >
+        <form id="resource-form" onSubmit={handleSubmit} className="space-y-4">
           {saveError && <Alert>{saveError}</Alert>}
           {formLoading && <p className="text-sm text-gray-500">Yazı yükleniyor…</p>}
 
@@ -447,25 +456,8 @@ export default function AdminResourcesPage() {
             </>
           )}
 
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            >
-              <Save className="w-4 h-4" />
-              {saving ? 'Kaydediliyor…' : 'Kaydet'}
-            </button>
-            <button
-              type="button"
-              onClick={closeForm}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Vazgeç
-            </button>
-          </div>
         </form>
-      )}
+      </Modal>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <form
