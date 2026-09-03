@@ -480,6 +480,20 @@ sonucu paylaşımı çoğu ajans sözleşmesinde izne tabidir.
 
 ## 7. Bilinen Sınırlamalar
 
+- **Görsel dönüştürme (`sharp`) sunucuda yüklenemeyebilir.** API açılışında
+  `UYARI: sharp yüklenemedi` görürseniz site yine çalışır; panelden yüklenen
+  görseller yalnızca WebP'ye çevrilmeden ve küçültülmeden, geldiği biçimde
+  kaydedilir (HEIC bu durumda kabul edilmez). Sebep genelde sunucunun `glibc`
+  sürümünün hazır derlenmiş ikili için eski olmasıdır. Teşhis:
+
+  ```bash
+  ldd --version | head -1
+  cd server && node -e "try{require('@img/sharp-linux-x64/lib/sharp-linux-x64.node')}catch(e){console.log(e.message)}"
+  ```
+
+  glibc 2.26'dan eskiyse `sharp` daha eski bir sürüme sabitlenmeli
+  (`npm install sharp@0.32.6` — glibc 2.17 ile çalışır). İkili dosya hiç
+  yoksa `npm install --include=optional sharp` ile yeniden kurun.
 - **Yüklenen görseller `server/uploads/` klasöründe tutulur.** Panelden
   yüklenen influencer fotoğrafları ve kapak görselleri build'e (`dist/`) değil
   API'nin yanına yazılır ve `/api/uploads/...` adresinden servis edilir. Yeni

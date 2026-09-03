@@ -7,7 +7,13 @@ const db = require('./db.js')
 
 const authRoutes = require('./routes/auth.js')
 const influencerRoutes = require('./routes/influencers.js')
-const { router: uploadRoutes, staticHandler: uploadedFiles } = require('./routes/uploads.js')
+const {
+  router: uploadRoutes,
+  staticHandler: uploadedFiles,
+  imageProcessing,
+  sharpError,
+  UPLOAD_DIR,
+} = require('./routes/uploads.js')
 const serviceRoutes = require('./routes/services.js')
 const resourceRoutes = require('./routes/resources.js')
 const applicationRoutes = require('./routes/applications.js')
@@ -117,6 +123,15 @@ app.listen(port, host, () => {
   console.log(`API http://${host}:${port} adresinde çalışıyor`)
   if (rateLimitDisabled) {
     console.warn('UYARI: RATE_LIMIT_DISABLED=true — hız sınırı kapalı.')
+  }
+  if (imageProcessing) {
+    console.log(`Görsel yükleme hazır (WebP dönüştürme açık): ${UPLOAD_DIR}`)
+  } else {
+    console.warn(
+      'UYARI: sharp yüklenemedi; görseller dönüştürülmeden/küçültülmeden kaydedilecek.\n' +
+        `  Sebep: ${sharpError}\n` +
+        '  Çözüm için README.md → "Bilinen Sınırlamalar" bölümüne bakın (glibc sürümü / sharp sürümü).'
+    )
   }
   reportDatabase()
 })

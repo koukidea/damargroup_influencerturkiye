@@ -3,8 +3,20 @@ const fs = require('fs/promises')
 const crypto = require('crypto')
 const express = require('express')
 const multer = require('multer')
-const sharp = require('sharp')
 const { requireAdmin } = require('../middleware/auth.js')
+
+// sharp native bir kütüphane; sunucunun sistem kütüphaneleri (glibc) hazır
+// derlenmiş ikili için eskiyse require aşamasında patlar. Bu yüzden API'nin
+// açılışını sharp'a bağlamıyoruz: yüklenemezse görseller dönüştürülmeden,
+// geldiği biçimde kaydedilir ve başlangıçta uyarı basılır.
+let sharp = null
+let sharpError = ''
+try {
+  sharp = require('sharp')
+} catch (err) {
+  sharpError = err?.message || String(err)
+}
+const imageProcessing = Boolean(sharp)
 
 // Panelden yüklenen görseller. Dosyalar build çıktısına (dist/) değil, API'nin
 // kendi klasörüne yazılıyor; böylece her yeni build'de silinmiyor ve Nginx'te
@@ -22,22 +34,33 @@ const MAX_HEIGHT = 1600
 const WEBP_QUALITY = 82
 const MAX_FILE_BYTES = 20 * 1024 * 1024
 
-const ALLOWED_TYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/avif',
-  'image/heic',
-  'image/heif',
-])
+// HEIC/HEIF tarayıcıda gösterilemez; yalnızca sharp ile WebP'ye çevrilebiliyorsa kabul edilir.
+const BROWSER_TYPES = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/avif': 'avif',
+}
+const CONVERT_ONLY_TYPES = new Set(['image/heic', 'image/heif'])
+
+function isAllowedType(mimetype) {
+  if (mimetype in BROWSER_TYPES) return true
+  return imageProcessing && CONVERT_ONLY_TYPES.has(mimetype)
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_FILE_BYTES, files: 1 },
   fileFilter: (req, file, cb) => {
-    if (ALLOWED_TYPES.has(file.mimetype)) return cb(null, true)
-    cb(new UploadError('Yalnızca görsel dosyaları yüklenebilir (JPG, PNG, WebP, GIF, AVIF, HEIC).'))
+    if (isAllowedType(file.mimetype)) return cb(null, true)
+    cb(
+      new UploadError(
+        imageProcessing
+          ? 'Yalnızca görsel dosyaları yüklenebilir (JPG, PNG, WebP, GIF, AVIF, HEIC).'
+          : 'Yalnızca JPG, PNG, WebP, GIF veya AVIF yükleyebilirsiniz.'
+      )
+    )
   },
 })
 
@@ -95,7 +118,7 @@ function isUploadedUrl(url) {
 async function removeUploadedFile(url) {
   if (!isUploadedUrl(url)) return
   const name = path.basename(url)
-  if (!/^[a-z0-9-]+\.webp$/.test(name)) return
+  if (!/^[a-z0-9-]+\.(webp|jpg|png|gif|avif)$/.test(name)) return
   await fs.unlink(path.join(UPLOAD_DIR, name)).catch(() => {})
 }
 
@@ -115,17 +138,23 @@ router.post('/', requireAdmin, (req, res, next) => {
     try {
       await fs.mkdir(UPLOAD_DIR, { recursive: true })
 
-      const fileName = `${safeBaseName(req.file.originalname)}-${crypto
-        .randomBytes(4)
-        .toString('hex')}.webp`
+      const stem = `${safeBaseName(req.file.originalname)}-${crypto.randomBytes(4).toString('hex')}`
 
+      if (!imageProcessing) {
+        // Dönüştürme yok: dosya geldiği biçimde saklanır.
+        const fileName = `${stem}.${BROWSER_TYPES[req.file.mimetype]}`
+        await fs.writeFile(path.join(UPLOAD_DIR, fileName), req.file.buffer)
+        return res.status(201).json({ url: `${PUBLIC_PREFIX}/${fileName}`, processed: false })
+      }
+
+      const fileName = `${stem}.webp`
       const image = sharp(req.file.buffer, { animated: false }).rotate()
       const { width, height } = await image
         .resize({ width: MAX_WIDTH, height: MAX_HEIGHT, fit: 'inside', withoutEnlargement: true })
         .webp({ quality: WEBP_QUALITY })
         .toFile(path.join(UPLOAD_DIR, fileName))
 
-      res.status(201).json({ url: `${PUBLIC_PREFIX}/${fileName}`, width, height })
+      res.status(201).json({ url: `${PUBLIC_PREFIX}/${fileName}`, width, height, processed: true })
     } catch (error) {
       console.error(error)
       res.status(400).json({ error: 'Görsel işlenemedi. Dosya bozuk ya da desteklenmeyen bir biçimde olabilir.' })
@@ -141,4 +170,12 @@ const staticHandler = express.static(UPLOAD_DIR, {
   index: false,
 })
 
-module.exports = { router, staticHandler, removeUploadedFile, isUploadedUrl, UPLOAD_DIR }
+module.exports = {
+  router,
+  staticHandler,
+  removeUploadedFile,
+  isUploadedUrl,
+  UPLOAD_DIR,
+  imageProcessing,
+  sharpError,
+}
