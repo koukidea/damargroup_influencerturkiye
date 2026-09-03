@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Plus, Pencil, Trash2, Save, Search, Eye, ExternalLink, Wand2, ChevronDown,
+  Plus, Pencil, Trash2, Save, Search, Eye, ExternalLink, Wand2, ChevronDown, X,
 } from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
 import { estimateReadTime, toPlainText, truncate } from '../../lib/contentFormat.js'
@@ -11,6 +11,20 @@ import ImageUploadField from '../../components/admin/ImageUploadField.jsx'
 import Modal from '../../components/admin/Modal.jsx'
 
 const PAGE_SIZE = 15
+const SEARCH_DEBOUNCE_MS = 300
+
+const STATUS_FILTERS = [
+  { key: 'all', label: 'Tümü' },
+  { key: 'published', label: 'Yayında' },
+  { key: 'draft', label: 'Taslak' },
+]
+
+const SORT_OPTIONS = [
+  { key: 'newest', label: 'En yeni' },
+  { key: 'oldest', label: 'En eski' },
+  { key: 'views', label: 'En çok görüntülenen' },
+  { key: 'title', label: 'Başlığa göre (A→Z)' },
+]
 
 const FORMAT_HELP = [
   ['## Başlık', 'Bölüm başlığı (H2)'],
@@ -61,6 +75,38 @@ export default function AdminResourcesPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [sort, setSort] = useState('newest')
+  const searchTimer = useRef(null)
+
+  // Yazarken aramak için: her tuşta değil, yazma durduktan kısa süre sonra
+  // istek atılıyor. Böylece hem Enter'a basmak gerekmiyor hem sunucu boğulmuyor.
+  function handleSearchChange(value) {
+    setSearchInput(value)
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setPage(1)
+      setSearch(value.trim())
+    }, SEARCH_DEBOUNCE_MS)
+  }
+
+  function clearSearch() {
+    clearTimeout(searchTimer.current)
+    setSearchInput('')
+    setPage(1)
+    setSearch('')
+  }
+
+  useEffect(() => () => clearTimeout(searchTimer.current), [])
+
+  const filtersActive = Boolean(search) || statusFilter !== 'all' || categoryFilter !== 'all' || sort !== 'newest'
+
+  function resetFilters() {
+    clearSearch()
+    setStatusFilter('all')
+    setCategoryFilter('all')
+    setSort('newest')
+  }
 
   const [editingId, setEditingId] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -77,7 +123,9 @@ export default function AdminResourcesPage() {
     try {
       const result = await listResources({
         status: statusFilter,
+        category: categoryFilter === 'all' ? '' : categoryFilter,
         q: search,
+        sort,
         page,
         limit: PAGE_SIZE,
       })
@@ -88,7 +136,7 @@ export default function AdminResourcesPage() {
     } finally {
       setListLoading(false)
     }
-  }, [listResources, statusFilter, search, page])
+  }, [listResources, statusFilter, categoryFilter, sort, search, page])
 
   useEffect(() => {
     reload()
@@ -459,36 +507,93 @@ export default function AdminResourcesPage() {
         </form>
       </Modal>
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            setPage(1)
-            setSearch(searchInput.trim())
-          }}
-          className="relative flex-1 min-w-56"
-        >
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="Başlık, özet veya etikette ara…"
-            className="input pl-10 py-2.5"
-          />
-        </form>
-        <select
-          value={statusFilter}
-          onChange={(e) => {
-            setPage(1)
-            setStatusFilter(e.target.value)
-          }}
-          className="input w-auto py-2.5"
-        >
-          <option value="all">Tümü</option>
-          <option value="published">Yayında</option>
-          <option value="draft">Taslak</option>
-        </select>
-        <span className="text-sm text-gray-500">{data.total} yazı</span>
+      <div className="space-y-3 mb-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="relative flex-1 min-w-56">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder="Başlık, özet veya etikette ara…"
+              aria-label="Yazılarda ara"
+              className="input pl-10 pr-10 py-2.5"
+            />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                aria-label="Aramayı temizle"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </label>
+          <select
+            value={categoryFilter}
+            onChange={(e) => {
+              setPage(1)
+              setCategoryFilter(e.target.value)
+            }}
+            aria-label="Kategori"
+            className="input w-auto py-2.5"
+          >
+            <option value="all">Tüm kategoriler</option>
+            {resourceCategories.map((cat) => (
+              <option key={cat.slug} value={cat.slug}>
+                {cat.label}
+              </option>
+            ))}
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => {
+              setPage(1)
+              setSort(e.target.value)
+            }}
+            aria-label="Sıralama"
+            className="input w-auto py-2.5"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.key} value={opt.key}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => {
+                setPage(1)
+                setStatusFilter(f.key)
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                statusFilter === f.key
+                  ? 'bg-gray-900 border-gray-900 text-white'
+                  : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+          <span className="text-sm text-gray-500 ml-1">
+            {listLoading ? '…' : `${data.total} yazı`}
+          </span>
+          {filtersActive && (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="ml-auto text-sm text-gray-500 hover:text-red-600 underline-offset-2 hover:underline"
+            >
+              Filtreleri temizle
+            </button>
+          )}
+        </div>
       </div>
 
       {listError && <Alert>{listError}</Alert>}
@@ -498,7 +603,7 @@ export default function AdminResourcesPage() {
           <p className="text-center text-gray-500 py-16">Yükleniyor…</p>
         ) : data.items.length === 0 ? (
           <p className="text-center text-gray-500 py-16">
-            {search ? 'Aramanızla eşleşen yazı yok.' : 'Henüz yazı eklenmedi.'}
+            {filtersActive ? 'Bu filtrelerle eşleşen yazı yok.' : 'Henüz yazı eklenmedi.'}
           </p>
         ) : (
           <div className="overflow-x-auto">

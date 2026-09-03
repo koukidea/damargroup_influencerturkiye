@@ -261,9 +261,19 @@ router.get('/', async (req, res) => {
   const [{ count }] = await applyFilters(db('resources')).count({ count: '*' })
   const total = Number(count)
 
+  // Panel listesi için sıralama seçenekleri. Bilinmeyen değer varsayılana düşer;
+  // sütun adları sabit listeden geldiği için sorguya kullanıcı girdisi girmez.
+  const SORTS = {
+    newest: [{ column: 'date', order: 'desc' }, { column: 'id', order: 'desc' }],
+    oldest: [{ column: 'date', order: 'asc' }, { column: 'id', order: 'asc' }],
+    views: [{ column: 'views', order: 'desc' }, { column: 'date', order: 'desc' }],
+    title: [{ column: 'title', order: 'asc' }],
+  }
+  const orderBy = SORTS[req.query.sort] || SORTS.newest
+
   const rows = await applyFilters(db('resources').select(LIST_COLUMNS))
     // Aynı güne düşen yazıların sırası sabit kalsın diye id ile ikincil sıralama.
-    .orderBy([{ column: 'date', order: 'desc' }, { column: 'id', order: 'desc' }])
+    .orderBy(orderBy)
     .limit(limit)
     .offset((page - 1) * limit)
 

@@ -102,7 +102,10 @@ export default function AdminLayout() {
 
       <ChangePasswordModal open={showPassword} onClose={() => setShowPassword(false)} />
 
-      <main className="flex-1 ml-64 p-8">
+      {/* min-w-0: flex öğesi varsayılan olarak içeriğinin en dar genişliğinin
+          altına inmez; Kaynaklar sayfasındaki uzun başlık satırı bu yüzden
+          tüm paneli yatayda taşırıyordu. */}
+      <main className="flex-1 min-w-0 ml-64 p-8">
         <DataStatusBanner />
         <Suspense fallback={<RouteFallback />}>
           <Outlet />
