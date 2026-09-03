@@ -49,9 +49,10 @@ export default function ImageUploadField({
     <div className="block">
       <span className="block text-sm font-medium text-gray-700 mb-1.5">{label}</span>
 
-      <div className="flex gap-4">
+      {/* Dar ekranda önizleme üstte, geniş ekranda solda. */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <div
-          className={`w-24 shrink-0 ${aspect} rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center`}
+          className={`w-20 sm:w-24 shrink-0 ${aspect} rounded-xl border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center`}
         >
           {value ? (
             <img
@@ -125,17 +126,17 @@ export default function ImageUploadField({
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-3 text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
               <button
                 type="button"
                 onClick={() => setManual(true)}
-                className="inline-flex items-center gap-1 text-gray-500 hover:text-red-600"
+                className="inline-flex items-center gap-1 whitespace-nowrap text-gray-500 hover:text-red-600"
               >
                 <Link2 className="w-3.5 h-3.5" />
                 Yol / adres gir
               </button>
               {value && (
-                <span className="text-gray-400 truncate" title={value}>
+                <span className="min-w-0 max-w-full truncate text-gray-400" title={value}>
                   {value}
                 </span>
               )}

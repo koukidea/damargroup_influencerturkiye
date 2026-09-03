@@ -180,7 +180,7 @@ export default function AdminInfluencersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Influencer'lar</h1>
           <p className="text-gray-500">
@@ -391,19 +391,20 @@ export default function AdminInfluencersPage() {
                 {visible.length} sonuç
               </div>
             )}
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[520px]">
               <thead className="bg-gray-50 text-gray-500 text-left">
                 <tr>
-                  <th className="px-6 py-3 font-medium">Influencer</th>
-                  <th className="px-6 py-3 font-medium">Gösterim</th>
-                  <th className="px-6 py-3 font-medium">Takipçi / Etkileşim</th>
-                  <th className="px-6 py-3 font-medium text-right">İşlemler</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Influencer</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium">Gösterim</th>
+                  <th className="hidden md:table-cell px-6 py-3 font-medium">Takipçi / Etkileşim</th>
+                  <th className="px-4 sm:px-6 py-3 font-medium text-right">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {visible.map((inf) => (
                   <tr key={inf.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3">
+                    <td className="px-4 sm:px-6 py-3">
                       <div className="flex items-center gap-3">
                         <img
                           src={inf.image}
@@ -424,13 +425,13 @@ export default function AdminInfluencersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 sm:px-6 py-3">
                       <div className="flex flex-wrap gap-1.5">
                         {inf.show_on_home && <Badge icon={Home}>Anasayfa</Badge>}
                         {inf.show_in_portfolio && <Badge icon={Images}>Portföy</Badge>}
                       </div>
                     </td>
-                    <td className="px-6 py-3 text-gray-600">
+                    <td className="hidden md:table-cell px-6 py-3 text-gray-600">
                       {inf.show_on_home ? (
                         <>
                           {inf.followers} <span className="text-gray-300">·</span> {inf.engagement}
@@ -439,7 +440,7 @@ export default function AdminInfluencersPage() {
                         <span className="text-gray-300">—</span>
                       )}
                     </td>
-                    <td className="px-6 py-3">
+                    <td className="px-4 sm:px-6 py-3">
                       <div className="flex items-center justify-end gap-1">
                         {canReorder && (
                           <>
@@ -471,6 +472,7 @@ export default function AdminInfluencersPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </>
         )}
       </div>

@@ -53,7 +53,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
       role="presentation"
       onMouseDown={(e) => {
         // Yalnızca arka plana tıklanınca kapat; pencere içindeki tıklamalar
@@ -69,7 +69,7 @@ export default function Modal({
         aria-label={title}
         className={`relative w-full ${SIZES[size] || SIZES.md} max-h-full flex flex-col bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden`}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 shrink-0">
           <h2 className="font-semibold text-gray-900">{title}</h2>
           <div className="flex items-center gap-2">
             {headerActions}
@@ -84,10 +84,10 @@ export default function Modal({
           </div>
         </div>
 
-        <div className="px-6 py-5 overflow-y-auto">{children}</div>
+        <div className="px-4 sm:px-6 py-4 sm:py-5 overflow-y-auto">{children}</div>
 
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/60 shrink-0">{footer}</div>
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-t border-gray-100 bg-gray-50/60 shrink-0">{footer}</div>
         )}
       </div>
     </div>,
