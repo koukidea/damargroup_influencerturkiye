@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
 import ImageUploadField from '../../components/admin/ImageUploadField.jsx'
+import Modal from '../../components/admin/Modal.jsx'
 
 // Tek liste iki yeri besliyor: anasayfadaki kart slider'ı ve portföy
 // sayfasındaki "Kampanyalarımızda Yer Alan İsimler" galerisi. Kayıt üzerindeki
@@ -100,7 +101,6 @@ export default function AdminInfluencersPage() {
     setForm(emptyForm)
     setSaveError('')
     setShowForm(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function startEdit(inf) {
@@ -116,7 +116,6 @@ export default function AdminInfluencersPage() {
     })
     setSaveError('')
     setShowForm(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function closeForm() {
@@ -204,25 +203,32 @@ export default function AdminInfluencersPage() {
         </div>
       )}
 
-      {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white border border-gray-200 rounded-3xl p-6 mb-8 space-y-5"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">
-              {editingId ? 'Influencer Düzenle' : 'Yeni Influencer'}
-            </h2>
+      <Modal
+        open={showForm}
+        title={editingId ? 'Influencer Düzenle' : 'Yeni Influencer'}
+        onClose={closeForm}
+        footer={
+          <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={closeForm}
-              className="text-gray-400 hover:text-gray-600"
-              aria-label="Kapat"
+              className="text-sm text-gray-500 hover:text-gray-800 px-2"
             >
-              <X className="w-5 h-5" />
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              form="influencer-form"
+              disabled={saving}
+              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            >
+              <Save className="w-4 h-4" />
+              {saving ? 'Kaydediliyor…' : 'Kaydet'}
             </button>
           </div>
-
+        }
+      >
+        <form id="influencer-form" onSubmit={handleSubmit} className="space-y-5">
           {saveError && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               {saveError}
@@ -317,26 +323,8 @@ export default function AdminInfluencersPage() {
               </AdminField>
             </div>
           )}
-
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            >
-              <Save className="w-4 h-4" />
-              {saving ? 'Kaydediliyor…' : 'Kaydet'}
-            </button>
-            <button
-              type="button"
-              onClick={closeForm}
-              className="text-sm text-gray-500 hover:text-gray-800"
-            >
-              Vazgeç
-            </button>
-          </div>
         </form>
-      )}
+      </Modal>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <label className="relative flex-1 min-w-[220px] sm:max-w-xs">
