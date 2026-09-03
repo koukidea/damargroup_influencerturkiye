@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom'
 import RouteFallback from '../../components/RouteFallback.jsx'
 import {
@@ -10,10 +10,12 @@ import {
   Inbox,
   LogOut,
   ExternalLink,
+  KeyRound,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useSeo } from '../../lib/seo.js'
 import DataStatusBanner from '../../components/DataStatusBanner.jsx'
+import ChangePasswordModal from '../../components/admin/ChangePasswordModal.jsx'
 
 const navItems = [
   { to: '/admin', label: 'Genel Bakış', icon: LayoutDashboard, end: true },
@@ -29,6 +31,7 @@ export default function AdminLayout() {
   useSeo({ title: 'Yönetim Paneli', robots: 'noindex, nofollow' })
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [showPassword, setShowPassword] = useState(false)
 
   function handleLogout() {
     logout()
@@ -75,6 +78,13 @@ export default function AdminLayout() {
             Siteyi Görüntüle
           </a>
           <button
+            onClick={() => setShowPassword(true)}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            <KeyRound className="w-4 h-4" />
+            Şifre Değiştir
+          </button>
+          <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
           >
@@ -89,6 +99,8 @@ export default function AdminLayout() {
           </div>
         </div>
       </aside>
+
+      <ChangePasswordModal open={showPassword} onClose={() => setShowPassword(false)} />
 
       <main className="flex-1 ml-64 p-8">
         <DataStatusBanner />

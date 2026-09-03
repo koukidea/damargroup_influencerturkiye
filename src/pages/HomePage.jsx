@@ -78,7 +78,8 @@ const progressItems = [
 ]
 
 export default function HomePage() {
-  const { homeInfluencers, latestResources, resourceCategories, loading } = useData()
+  const { homeInfluencers, portfolioCreators, latestResources, resourceCategories, loading } =
+    useData()
 
   useSeo({
     description:
@@ -275,7 +276,11 @@ export default function HomePage() {
                 </div>
                 <div className="mt-auto">
                   <h3 className="text-3xl md:text-4xl font-bold text-white mb-1">Tümünü Gör</h3>
-                  <p className="text-white/90 text-sm">13 150 influencer</p>
+                  {portfolioCreators.length > 0 && (
+                    <p className="text-white/90 text-sm">
+                      {portfolioCreators.length.toLocaleString('tr-TR')} influencer
+                    </p>
+                  )}
                 </div>
               </Link>
             </SwiperSlide>

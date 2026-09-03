@@ -47,7 +47,9 @@ Seed komutu şu demo yönetici hesabını oluşturur:
 - **E-posta:** `admin@influencerturkiye.com`
 - **Şifre:** `admin123`
 
-> Canlıya almadan önce bu şifreyi mutlaka değiştirin.
+> Canlıya almadan önce bu şifreyi mutlaka değiştirin. Panelde giriş yaptıktan
+> sonra sol menünün altındaki **Şifre Değiştir** düğmesini kullanın (mevcut
+> şifre sorulur, yeni şifre en az 8 karakter).
 
 Geliştirme sırasında dosya değişikliklerinde otomatik yeniden başlatma için
 `npm run dev` (nodemon) kullanabilirsiniz.
