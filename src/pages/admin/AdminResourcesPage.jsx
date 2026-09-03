@@ -7,6 +7,7 @@ import { useData } from '../../context/DataContext.jsx'
 import { estimateReadTime, toPlainText, truncate } from '../../lib/contentFormat.js'
 import { resolveCategory, resourcePath } from '../../lib/resources.js'
 import ArticleContent from '../../components/resources/ArticleContent.jsx'
+import ImageUploadField from '../../components/admin/ImageUploadField.jsx'
 
 const PAGE_SIZE = 15
 
@@ -338,38 +339,22 @@ export default function AdminResourcesPage() {
                 </Field>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field
-                  label="Kapak Görseli"
-                  hint="Sunucudaki yol (/assets/kapak.webp) veya tam adres"
-                >
-                  <input
-                    value={form.coverImage}
-                    onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
-                    className="input"
-                    placeholder="/assets/kapak.webp"
-                  />
-                </Field>
-                <Field label="Görsel Açıklaması" hint="Görme engelliler ve SEO için">
-                  <input
-                    value={form.coverAlt}
-                    onChange={(e) => setForm({ ...form, coverAlt: e.target.value })}
-                    className="input"
-                    placeholder="Görselde ne var?"
-                  />
-                </Field>
-              </div>
+              <ImageUploadField
+                label="Kapak Görseli"
+                aspect="aspect-[16/10]"
+                value={form.coverImage}
+                onChange={(coverImage) => setForm((prev) => ({ ...prev, coverImage }))}
+                hint="Yatay (16:10) görseller kartlarda en iyi görünür."
+              />
 
-              {form.coverImage && (
-                <img
-                  src={form.coverImage}
-                  alt={form.coverAlt || 'Kapak önizlemesi'}
-                  className="h-36 rounded-xl border border-gray-200 object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
+              <Field label="Görsel Açıklaması" hint="Görme engelliler ve SEO için">
+                <input
+                  value={form.coverAlt}
+                  onChange={(e) => setForm({ ...form, coverAlt: e.target.value })}
+                  className="input"
+                  placeholder="Görselde ne var?"
                 />
-              )}
+              </Field>
 
               <Field
                 label="Özet"

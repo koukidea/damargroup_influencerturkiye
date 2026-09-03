@@ -31,7 +31,6 @@ const BrandApplicationPage = lazy(() => import('./pages/BrandApplicationPage.jsx
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout.jsx'))
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.jsx'))
 const AdminInfluencersPage = lazy(() => import('./pages/admin/AdminInfluencersPage.jsx'))
-const AdminPortfolioPage = lazy(() => import('./pages/admin/AdminPortfolioPage.jsx'))
 const AdminServicesPage = lazy(() => import('./pages/admin/AdminServicesPage.jsx'))
 const AdminResourcesPage = lazy(() => import('./pages/admin/AdminResourcesPage.jsx'))
 const AdminResourceCategoriesPage = lazy(() => import('./pages/admin/AdminResourceCategoriesPage.jsx'))
@@ -70,6 +69,14 @@ function App() {
           <Route path="/basvuru/influencer" element={<InfluencerApplicationPage />} />
           <Route path="/basvuru/marka" element={<BrandApplicationPage />} />
 
+          {/* Statik site alışkanlığından kalan giriş dosyaları. Nginx bunları
+              SPA fallback'i sayesinde 200 ile veriyor, ama aşağıdaki /:slug
+              kuralına düşüp "yazı bulunamadı" ekranı çıkıyordu. Ana sayfaya
+              yönlendiriyoruz. */}
+          <Route path="/index.html" element={<Navigate to="/" replace />} />
+          <Route path="/index.htm" element={<Navigate to="/" replace />} />
+          <Route path="/index.php" element={<Navigate to="/" replace />} />
+
           {/* Blog yazıları kök adreste: /yazi-basligi
               React Router sabit yolları parametreli yola tercih ettiği için
               yukarıdaki sayfalar bu kuraldan etkilenmez. Slug çakışmasına karşı
@@ -88,7 +95,8 @@ function App() {
         >
           <Route index element={<AdminDashboardPage />} />
           <Route path="influencerlar" element={<AdminInfluencersPage />} />
-          <Route path="portfoy" element={<AdminPortfolioPage />} />
+          {/* Portföy galerisi artık influencer sayfasından yönetiliyor; eski yer imleri kırılmasın. */}
+          <Route path="portfoy" element={<Navigate to="/admin/influencerlar" replace />} />
           <Route path="hizmetler" element={<AdminServicesPage />} />
           <Route path="kaynaklar" element={<AdminResourcesPage />} />
           <Route path="kaynak-kategorileri" element={<AdminResourceCategoriesPage />} />

@@ -220,6 +220,41 @@ vermesin diye sunucunun bilinmeyen yolları `index.html`'e düşürmesi gerekir.
   Nginx en uzun prefix'i seçtiği için `/api` reverse proxy'si bundan
   etkilenmez.
 
+### 5.3.1 Eski giriş dosyaları — `/index.html` → `/` (301)
+
+Statik site alışkanlığından kalan `/index.html`, `/index.htm`, `/index.php`
+adresleri gerçek bir sayfa değil. Uygulama içinde bunlar ana sayfaya
+yönlendiriliyor (`src/App.jsx`), ama arama motoru açısından temiz olması
+için yönlendirmeyi sunucuda **301** olarak vermek gerekir. `server { }`
+bloğuna ekleyin:
+
+```nginx
+# Eski giriş dosyalarını ana sayfaya taşı.
+# Koşul $request_uri üzerinden kurulu: bu değişken isteğin ORİJİNAL halini
+# tutar ve internal redirect'lerde değişmez.
+if ($request_uri ~ "^/index\.(html?|php)(\?|$)") {
+    return 301 /;
+}
+```
+
+> **`location = /index.html { return 301 /; }` YAZMAYIN.** SPA fallback'i
+> olan `try_files $uri $uri/ /index.html` son parametreye *internal
+> redirect* yapar; internal redirect ise location eşleştirmesini baştan
+> çalıştırır. Bu yüzden `/portfolyo` isteği bile `/index.html` location'ına
+> düşer, 301 alır, `/` adresi tekrar `index.html`e çözülür ve döngü kapanmaz
+> — tek bir adres değil **tüm site** `ERR_TOO_MANY_REDIRECTS` verir.
+> `$request_uri` koşulu bu tuzağı tamamen atlatır.
+
+Doğrulama (yeniden yükleme sonrası):
+
+```bash
+curl -sI https://alan-adiniz.com/index.html | head -2   # 301 + Location: /
+curl -so /dev/null -w '%{http_code}\n' https://alan-adiniz.com/portfolyo   # 200
+```
+
+İkinci komut şart: döngü hatası yalnızca fallback'e düşen bir adreste
+görünür, `/index.html` tek başına yanıltıcıdır.
+
 **robots.txt — ek yapılandırma gerekmez.** Tarayıcılar bu dosyayı yalnızca
 alan adının kökünden okur; `public/robots.txt` build sırasında `dist/`
 köküne kopyalandığı için `https://alan-adiniz.com/robots.txt` doğrudan
@@ -445,10 +480,11 @@ sonucu paylaşımı çoğu ajans sözleşmesinde izne tabidir.
 
 ## 7. Bilinen Sınırlamalar
 
-- **Görsel yükleme sistemi yok.** Hem influencer hem blog yazısı eklerken bir
-  görsel yolu/URL'i giriliyor, dosya yüklenmiyor. Yeni görselleri önce
-  sunucuya (FTP/dosya yöneticisi) yükleyip yolunu (`/assets/kapak.webp`)
-  yazmanız gerekiyor.
+- **Yüklenen görseller `server/uploads/` klasöründe tutulur.** Panelden
+  yüklenen influencer fotoğrafları ve kapak görselleri build'e (`dist/`) değil
+  API'nin yanına yazılır ve `/api/uploads/...` adresinden servis edilir. Yeni
+  sürüm yüklemek bu dosyaları silmez, ama sunucu yedeğine bu klasörü de dahil
+  edin. Farklı bir konum için `.env` dosyasına `UPLOAD_DIR` yazın.
 - **KVKK sayfası boş.** Başvuru formları ad, e-posta, telefon gibi kişisel
   veri topluyor; yayına almadan önce aydınlatma metni ve açık rıza onay
   kutusu eklenmelidir.

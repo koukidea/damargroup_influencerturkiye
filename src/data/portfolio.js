@@ -3,8 +3,8 @@
 // referansları geldiğinde buradaki liste API verisiyle değiştirilecek.
 //
 // İçerik üretici galerisi artık burada değil: veritabanından geliyor ve
-// yönetim panelindeki "Portföy Galerisi" bölümünden düzenleniyor
-// (server/src/routes/portfolioCreators.js).
+// yönetim panelindeki "Influencer'lar" sayfasından düzenleniyor
+// (server/src/routes/influencers.js, show_in_portfolio bayrağı).
 
 // Vaka çalışmaları. Marka isimleri sözleşme gereği anonim tutuluyor.
 export const caseStudies = [

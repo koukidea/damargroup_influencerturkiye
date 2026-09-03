@@ -1,8 +1,9 @@
+import { Suspense } from 'react'
 import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom'
+import RouteFallback from '../../components/RouteFallback.jsx'
 import {
   LayoutDashboard,
   Users,
-  Images,
   Briefcase,
   Newspaper,
   Tags,
@@ -17,7 +18,6 @@ import DataStatusBanner from '../../components/DataStatusBanner.jsx'
 const navItems = [
   { to: '/admin', label: 'Genel Bakış', icon: LayoutDashboard, end: true },
   { to: '/admin/influencerlar', label: "Influencer'lar", icon: Users },
-  { to: '/admin/portfoy', label: 'Portföy Galerisi', icon: Images },
   { to: '/admin/hizmetler', label: 'Hizmetler', icon: Briefcase },
   { to: '/admin/kaynaklar', label: 'Kaynaklar', icon: Newspaper },
   { to: '/admin/kaynak-kategorileri', label: 'Kategoriler', icon: Tags },
@@ -92,7 +92,9 @@ export default function AdminLayout() {
 
       <main className="flex-1 ml-64 p-8">
         <DataStatusBanner />
-        <Outlet />
+        <Suspense fallback={<RouteFallback />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   )

@@ -7,7 +7,7 @@ const db = require('./db.js')
 
 const authRoutes = require('./routes/auth.js')
 const influencerRoutes = require('./routes/influencers.js')
-const portfolioCreatorRoutes = require('./routes/portfolioCreators.js')
+const { router: uploadRoutes, staticHandler: uploadedFiles } = require('./routes/uploads.js')
 const serviceRoutes = require('./routes/services.js')
 const resourceRoutes = require('./routes/resources.js')
 const applicationRoutes = require('./routes/applications.js')
@@ -43,13 +43,17 @@ app.use(
 // doğrulamak içindir: burada 127.0.0.1 görüyorsanız proxy yapılandırması eksiktir.
 app.get('/api/health', (req, res) => res.json({ ok: true, ip: req.ip }))
 
+// Panelden yüklenen görseller. Hız sınırından önce geliyor: bir sayfada onlarca
+// görsel yüklenir, her biri API isteği gibi sayılsaydı limit hemen dolardı.
+app.use('/api/uploads', uploadedFiles)
+
 app.use('/api', apiLimiter)
 app.use(express.json())
 app.use(authenticate)
 
 app.use('/api/auth', authRoutes)
 app.use('/api/influencers', influencerRoutes)
-app.use('/api/portfolio-creators', portfolioCreatorRoutes)
+app.use('/api/uploads', uploadRoutes)
 app.use('/api/services', serviceRoutes)
 app.use('/api/resources', resourceRoutes)
 app.use('/api/applications', applicationRoutes)

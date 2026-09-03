@@ -11,7 +11,6 @@ const DataContext = createContext(null)
 // dönüp yeniden indirilirdi.
 export function DataProvider({ children }) {
   const [influencers, setInfluencers] = useState([])
-  const [portfolioCreators, setPortfolioCreators] = useState([])
   const [services, setServices] = useState([])
   const [resourceCategories, setResourceCategories] = useState([])
   // Yazı listesi artık burada tutulmuyor: her sayfa ihtiyacı kadarını çekiyor.
@@ -35,9 +34,8 @@ export function DataProvider({ children }) {
 
     async function load() {
       try {
-        const [inf, creators, svc, cats, latest, page] = await Promise.all([
+        const [inf, svc, cats, latest, page] = await Promise.all([
           api.get('/influencers'),
-          api.get('/portfolio-creators'),
           api.get('/services'),
           api.get('/resources/categories'),
           api.get('/resources/latest?limit=3'),
@@ -45,7 +43,6 @@ export function DataProvider({ children }) {
         ])
         if (cancelled) return
         setInfluencers(inf)
-        setPortfolioCreators(creators)
         setServices(svc)
         setResourceCategories(cats)
         setLatestResources(latest)
@@ -81,22 +78,17 @@ export function DataProvider({ children }) {
     setInfluencers((prev) => prev.filter((i) => i.id !== id))
   }, [])
 
-  /* ---------------------- Portföy galerisi (içerik üreticileri) --------------------- */
-
-  const addPortfolioCreator = useCallback(async (data) => {
-    const created = await api.post('/portfolio-creators', data)
-    setPortfolioCreators((prev) => [...prev, created])
+  const reorderInfluencers = useCallback(async (ids) => {
+    const rows = await api.put('/influencers/reorder', { ids })
+    setInfluencers(rows)
   }, [])
 
-  const updatePortfolioCreator = useCallback(async (id, data) => {
-    const updated = await api.put(`/portfolio-creators/${id}`, data)
-    setPortfolioCreators((prev) => prev.map((c) => (c.id === id ? updated : c)))
-  }, [])
-
-  const removePortfolioCreator = useCallback(async (id) => {
-    await api.del(`/portfolio-creators/${id}`)
-    setPortfolioCreators((prev) => prev.filter((c) => c.id !== id))
-  }, [])
+  // Tek liste iki sayfayı besliyor; her sayfa kendi bayrağına göre süzüyor.
+  const homeInfluencers = useMemo(() => influencers.filter((i) => i.show_on_home), [influencers])
+  const portfolioCreators = useMemo(
+    () => influencers.filter((i) => i.show_in_portfolio),
+    [influencers]
+  )
 
   /* ---------------------------------- Hizmetler --------------------------------- */
 
@@ -176,17 +168,14 @@ export function DataProvider({ children }) {
       loading,
       error,
 
-      // Influencers
+      // Influencers (tek liste; anasayfa ve portföy görünümleri türetiliyor)
       influencers,
+      homeInfluencers,
+      portfolioCreators,
       addInfluencer,
       updateInfluencer,
       removeInfluencer,
-
-      // Portföy galerisi (içerik üreticileri)
-      portfolioCreators,
-      addPortfolioCreator,
-      updatePortfolioCreator,
-      removePortfolioCreator,
+      reorderInfluencers,
 
       // Services
       services,
@@ -214,13 +203,12 @@ export function DataProvider({ children }) {
       loading,
       error,
       influencers,
+      homeInfluencers,
+      portfolioCreators,
       addInfluencer,
       updateInfluencer,
       removeInfluencer,
-      portfolioCreators,
-      addPortfolioCreator,
-      updatePortfolioCreator,
-      removePortfolioCreator,
+      reorderInfluencers,
       services,
       addService,
       updateService,

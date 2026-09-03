@@ -5,4 +5,11 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Panelden yüklenen görseller /api/uploads/... yolundan geliyor. Geliştirme
+  // sunucusunda bu yol Vite'a düşerdi; canlıdaki Nginx gibi API'ye yönlendiriliyor.
+  server: {
+    proxy: {
+      '/api': 'http://localhost:4000',
+    },
+  },
 })

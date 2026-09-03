@@ -28,3 +28,16 @@ body {
     @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-all;
   }
 }
+
+/* Rota parçası yüklenirken gösterilen gösterge, hızlı geçişlerde hiç
+   görünmesin diye gecikmeli beliriyor (bkz. components/RouteFallback.jsx). */
+@keyframes route-fallback-in {
+  to {
+    opacity: 1;
+  }
+}
+
+.route-fallback-spinner {
+  opacity: 0;
+  animation: route-fallback-in 150ms ease-out 250ms forwards;
+}

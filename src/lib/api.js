@@ -42,8 +42,38 @@ export function buildQuery(params = {}) {
   return query ? `?${query}` : ''
 }
 
+// Dosya yükleme: JSON değil multipart gönderilir; Content-Type'ı tarayıcı
+// boundary ile birlikte kendisi koyar, o yüzden elle yazılmıyor.
+async function upload(path, file, { onProgress } = {}) {
+  const token = getToken()
+  const body = new FormData()
+  body.append('file', file, file.name)
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('POST', `${API_URL}${path}`)
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    xhr.upload.onprogress = (e) => {
+      if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100))
+    }
+    xhr.onerror = () => reject(new Error('Sunucuya ulaşılamadı.'))
+    xhr.onload = () => {
+      let data = null
+      try {
+        data = JSON.parse(xhr.responseText)
+      } catch {
+        data = null
+      }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(data)
+      else reject(new Error(data?.error || 'Yükleme başarısız oldu.'))
+    }
+    xhr.send(body)
+  })
+}
+
 export const api = {
   get: (path) => request(path),
+  upload,
   post: (path, body) => request(path, { method: 'POST', body }),
   put: (path, body) => request(path, { method: 'PUT', body }),
   del: (path) => request(path, { method: 'DELETE' }),

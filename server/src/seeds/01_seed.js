@@ -6,6 +6,7 @@ const {
 } = require('../data/blogCategories.js')
 const { blogPosts } = require('../data/blogPosts.js')
 const { portfolioCreators } = require('../data/portfolioCreators.js')
+const { normalizeHandle } = require('../lib/handle.js')
 
 const influencers = [
   { name: 'Zeynep Boz', image: '/assets/webp/zey_zor-Bj1gTP3O.webp', followers: '813K', engagement: '%2', instagram: 'https://www.instagram.com/zey_zor' },
@@ -215,7 +216,6 @@ exports.seed = async function (knex) {
   await knex('service_items').del()
   await knex('services').del()
   await knex('influencers').del()
-  await knex('portfolio_creators').del()
   await knex('users').del()
 
   const passwordHash = await bcrypt.hash('admin123', 10)
@@ -227,13 +227,34 @@ exports.seed = async function (knex) {
     avatar: '💼',
   })
 
-  await knex('influencers').insert(
-    influencers.map((inf, i) => ({ ...inf, position: i }))
-  )
-
-  await knex('portfolio_creators').insert(
-    portfolioCreators.map((creator, i) => ({ ...creator, position: i }))
-  )
+  // Anasayfa kartları ile portföy galerisi aynı tabloda; kayıt hangi sayfada
+  // görüneceğini show_on_home / show_in_portfolio ile taşır. Kullanıcı adı
+  // her iki listede de geçenler tek satır olarak yazılır.
+  const rows = influencers.map((inf) => ({
+    ...inf,
+    handle: normalizeHandle(inf.instagram),
+    show_on_home: true,
+    show_in_portfolio: false,
+  }))
+  for (const creator of portfolioCreators) {
+    const handle = normalizeHandle(creator.handle)
+    const existing = rows.find((r) => r.handle.toLowerCase() === handle.toLowerCase())
+    if (existing) {
+      existing.show_in_portfolio = true
+      continue
+    }
+    rows.push({
+      name: handle,
+      handle,
+      image: creator.image,
+      followers: '',
+      engagement: '',
+      instagram: creator.instagram,
+      show_on_home: false,
+      show_in_portfolio: true,
+    })
+  }
+  await knex('influencers').insert(rows.map((row, i) => ({ ...row, position: i })))
 
   await knex('resource_categories').insert(
     blogCategories.map((c, i) => ({ ...c, position: i }))

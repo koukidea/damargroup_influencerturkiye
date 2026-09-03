@@ -78,7 +78,7 @@ const progressItems = [
 ]
 
 export default function HomePage() {
-  const { influencers, latestResources, resourceCategories, loading } = useData()
+  const { homeInfluencers, latestResources, resourceCategories, loading } = useData()
 
   useSeo({
     description:
@@ -218,7 +218,7 @@ export default function HomePage() {
               1024: { slidesPerView: 4, spaceBetween: 28 },
             }}
           >
-            {influencers.map((inf) => {
+            {homeInfluencers.map((inf) => {
               const srcSet = influencerSrcSet(inf.image)
 
               return (

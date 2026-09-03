@@ -9,6 +9,13 @@
   # RewriteCond %{HTTPS} off
   # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
   
+  # Eski giriş dosyalarını ana sayfaya 301 ile taşı.
+  # Koşul THE_REQUEST (orijinal istek satırı) üzerinden kurulu; aşağıdaki
+  # SPA fallback'inin ürettiği dahili /index.html yeniden yazımı bu kurala
+  # takılmaz, yoksa her istek sonsuz döngüye girerdi.
+  RewriteCond %{THE_REQUEST} \s/+index\.(html?|php)[\s?] [NC]
+  RewriteRule ^ / [R=301,L]
+
   # Eğer dosya veya klasör yoksa, index.html'e yönlendir
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, Images, Briefcase, Newspaper, Inbox, ArrowRight } from 'lucide-react'
+import { Users, Briefcase, Newspaper, Inbox, ArrowRight } from 'lucide-react'
 import { useData } from '../../context/DataContext.jsx'
 import { api } from '../../lib/api.js'
 
 export default function AdminDashboardPage() {
-  const { influencers, portfolioCreators, services, resourceCount } = useData()
+  const { influencers, services, resourceCount } = useData()
   const [applicationCount, setApplicationCount] = useState(null)
 
   useEffect(() => {
@@ -21,14 +21,7 @@ export default function AdminDashboardPage() {
       label: "Influencer'lar",
       count: influencers.length,
       Icon: Users,
-      desc: 'Anasayfada gösterilen influencer kartlarını yönetin.',
-    },
-    {
-      to: '/admin/portfoy',
-      label: 'Portföy Galerisi',
-      count: portfolioCreators.length,
-      Icon: Images,
-      desc: 'Portföy sayfasındaki içerik üretici galerisini yönetin.',
+      desc: 'Anasayfa kartlarını ve portföy galerisini tek yerden yönetin.',
     },
     {
       to: '/admin/hizmetler',
