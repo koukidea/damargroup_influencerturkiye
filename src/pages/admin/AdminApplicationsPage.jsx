@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Users, Briefcase, MessageSquare, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { api } from '../../lib/api.js'
+import { applicationMeta, applicationTitle, formatApplicationDate } from '../../lib/applications.js'
 
 const TYPE_FILTERS = [
   { key: 'all', label: 'Tümü' },
@@ -40,40 +41,6 @@ function searchText(app) {
       .map(([, value]) => value)
       .join(' ')
   )
-}
-
-const typeMeta = {
-  influencer: {
-    label: 'Influencer Başvuru',
-    Icon: Users,
-    iconWrap: 'bg-red-50',
-    iconColor: 'text-red-600',
-    badge: 'bg-red-50 text-red-600',
-  },
-  brand: {
-    label: 'Marka Başvuru',
-    Icon: Briefcase,
-    iconWrap: 'bg-gray-100',
-    iconColor: 'text-gray-700',
-    badge: 'bg-gray-100 text-gray-700',
-  },
-  contact: {
-    label: 'İletişim Mesajı',
-    Icon: MessageSquare,
-    iconWrap: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-    badge: 'bg-blue-50 text-blue-600',
-  },
-}
-
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('tr-TR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 export default function AdminApplicationsPage() {
@@ -243,13 +210,8 @@ export default function AdminApplicationsPage() {
       ) : (
         <div className="space-y-4">
           {filtered.map((app) => {
-            const meta = typeMeta[app.type] || typeMeta.contact
-            const title =
-              app.type === 'influencer'
-                ? app.name
-                : app.type === 'brand'
-                  ? app.company
-                  : app.name
+            const meta = applicationMeta(app.type)
+            const title = applicationTitle(app)
 
             return (
             <div
@@ -265,7 +227,7 @@ export default function AdminApplicationsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{title}</p>
-                    <p className="text-xs text-gray-500">{formatDate(app.createdAt)}</p>
+                    <p className="text-xs text-gray-500">{formatApplicationDate(app.createdAt)}</p>
                   </div>
                 </div>
                 <span
